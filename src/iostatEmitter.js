@@ -66,11 +66,11 @@ class IostatEmitter extends EventEmitter {
       this._iostatProcess.on('error', (error) => {
         this.emit('error', error);
       });
-      this._iostatProcess.on('exit', (code, signal) => {
+      this._iostatProcess.on('close', (code, signal) => {
         if (code !== null) {
           this.emit('error', new Error(`Exit with non-null exit-code ${code}`));
         } else {
-          this.emit('end');        
+          this.emit('close');        
         }
       });
       this._iostatProcess.on('disconnect', () => {
@@ -79,7 +79,7 @@ class IostatEmitter extends EventEmitter {
       });     
       this._iostatProcess.stdout.pipe(this._streamParser);
       this._isStarted = true;
-      this.emit('start');
+      this.emit('restart');
     }
   }
 }
