@@ -3,12 +3,15 @@ const sinon = require("sinon");
 const iostatEmitterFactory = require('./../index.js');
 
 describe('iostat-emitter', () => {
-  describe('basic', () => {
-    it('should create instance without error', (done) => {
+  describe('basic initialize and stop', () => {
+    it('should create instance and stop without error', (done) => {
       (() => {
         let iostatEmitter = iostatEmitterFactory();
         iostatEmitter.on('stop', () => {
           done();
+        });
+        iostatEmitter.on('error', (error) => {
+          done(error);
         });
         iostatEmitter.stop();
       }).should.not.to.throw();
@@ -37,17 +40,19 @@ describe('iostat-emitter', () => {
 		});
 		describe('check data format', () => {			
 			describe('root level', () => {
-				it('data should has correct root keys', () => {				
-					return dataPromise.should.eventually.to.be.an('object').that.has.keys('avg-cpu','disk');
+				it('should has correct root keys', () => {				
+					return dataPromise.should.eventually.to.be.an('object').that.has.keys(
+            'avg-cpu', 'disk',
+          );
 				});
 			});
 			describe('deep level', () => {
-				it('data should has correct inner avg-cpu keys', () => {				
+				it('should has correct inner avg-cpu keys', () => {				
 					return dataPromise.then(data => data['avg-cpu']).should.eventually.to.be.an('object').that.has.keys(
 						'idle', 'iowait', 'nice', 'steal', 'system', 'user',
 					);
 				});
-				it('data should has correct inner disk[0] keys', () => {				
+				it('should has correct inner disk[0] keys', () => {				
 					return dataPromise.then(data => data['disk'][0]).should.eventually.to.be.an('object').that.has.keys(
 						'aqu-sz', 'disk_device', 'r/s', 'r_await', 'rareq-sz', 'rkB/s', 
 						'rrqm', 'rrqm/s', 'svctm', 'util', 'w/s', 'w_await', 'wareq-sz', 'wkB/s', 'wrqm', 'wrqm/s',
@@ -55,7 +60,38 @@ describe('iostat-emitter', () => {
 				});
 			});
 		});
+  });
+  
+  describe('header', () => {
+		let iostatEmitter = iostatEmitterFactory();
+		let errorEventSpy = sinon.spy();
+    iostatEmitter.on('error', errorEventSpy);
+		
+		let headerPromise = new Promise((resolve) => {
+			iostatEmitter.on('header', (header) => {
+				iostatEmitter.stop();
+				resolve(header);
+			});
+		});
+		describe('await header event', () => {
+			it('should emit header', () => {
+				return headerPromise.should.eventually.be.fulfilled;
+			});
+		});
+		describe('without error', () => {
+			it('should not emit error while getting header', () => {				
+				return headerPromise.then(errorEventSpy.should.not.be.called);
+			});
+		});
+		describe('check header format', () => {			
+		  it('header should has correct keys', () => {				
+        return headerPromise.should.eventually.to.be.an('object').that.has.keys(
+          'date', 'machine', 'nodename', 'number-of-cpus', 'release', 'sysname', 
+        );
+      });
+		});
 	});
+
   describe('restart-stop-stop sequence', () => {
     let iostatEmitter = iostatEmitterFactory();
     let restartEventSpy = sinon.spy();
