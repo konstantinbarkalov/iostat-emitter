@@ -96,11 +96,12 @@ describe('iostat-emitter', () => {
     let iostatEmitter = iostatEmitterFactory();
     let restartEventSpy = sinon.spy();
     let stopEventSpy = sinon.spy();
+    let errorEventSpy = sinon.spy();
     iostatEmitter.on('restart', restartEventSpy);
     iostatEmitter.on('stop', stopEventSpy);
+    iostatEmitter.on('error', errorEventSpy);
     sinon.spy(iostatEmitter, 'restart');
     sinon.spy(iostatEmitter, 'stop');
-
     describe('step 0', () => {
       it('should not emit "restart" on start', () => {
         return restartEventSpy.should.not.have.been.called;
@@ -120,15 +121,19 @@ describe('iostat-emitter', () => {
     
     describe('step 2', () => {
       it('should emit "stop" once', () => {
-        return restartEventSpy.should.have.been.calledOnce;
-      });
-
-      it('should emit "restart" once', () => {
         return stopEventSpy.should.have.been.calledOnce;
+      });
+      
+      it('should emit "restart" once', () => {
+        return restartEventSpy.should.have.been.calledOnce;
       });
 
       it('should emit "stop" and "restart" in order', () => {
         return restartEventSpy.should.have.been.calledAfter(stopEventSpy);
+      });
+
+      it('should not emit "error"', () => {
+        return errorEventSpy.should.not.have.been.called;
       });
 
     });
@@ -148,6 +153,11 @@ describe('iostat-emitter', () => {
       it('should not emit "restart"', () => {
         return restartEventSpy.should.have.been.calledOnce;
       });
+
+      it('should not emit "error"', () => {
+        return errorEventSpy.should.not.have.been.called;
+      });
+
     });
     
     describe('step 5', () => {
@@ -165,6 +175,11 @@ describe('iostat-emitter', () => {
       it('should not emit "restart"', () => {
         return restartEventSpy.should.have.been.calledOnce;
       });
+
+      it('should not emit "error"', () => {
+        return errorEventSpy.should.not.have.been.called;
+      });
+  
     });
 
   });
